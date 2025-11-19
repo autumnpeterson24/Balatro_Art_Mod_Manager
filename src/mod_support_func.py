@@ -8,6 +8,7 @@ import platform
 import subprocess
 import urllib.request
 import hashlib
+import base64
 
 import streamlit as st
 
@@ -25,6 +26,16 @@ SEVEN_ZIP_CANDIDATES = [
     r"C:\Program Files (x86)\7-Zip\7z.exe",
     "7z.exe",
 ]
+
+
+def local_css(file_name: str) -> None:
+    """ Read in the CSS file and apply it to the app """
+    try:
+        css_path = pathlib.Path(__file__).parent / file_name  # Uses the file's directory
+        with open(css_path) as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        st.error(f"CSS file {file_name} not found!")
 
 # Traversing, Finding, Downloading, and Hashing Utilities ===================
 def safe_join(root: str, relpath: str) -> str:
@@ -253,3 +264,120 @@ def install_into_exe_archive(game_root: str, mod_zip_or_url: str) -> str:
         if tmpzip:
             try: os.remove(tmpzip)
             except: pass
+
+# Per-Suit Page Rendering ==========================
+def render_suit_page(suit_key: str) -> None:
+    """
+    Render the per-suit 'page':
+      - show suit title
+      - show card art thumbnails for that suit
+      - provide a download button for that suit's zip only
+    """
+
+    suit_title = suit_key.capitalize()
+    st.markdown(f"## {suit_title} Card Art")
+
+    # ---- Show card art for this suit ----
+    # Example folder layout: assets/cards/hearts/*.png
+    cards_dir = pathlib.Path(__file__).parent / "assets" / "cards" / suit_key
+    if cards_dir.is_dir():
+        img_files = sorted(cards_dir.glob("*.png"))
+        if img_files:
+            cols = st.columns(4)
+            for i, img_path in enumerate(img_files):
+                with cols[i % 4]:
+                    st.image(str(img_path))
+        else:
+            st.info(f"No card images found yet for {suit_title}.")
+    else:
+        st.info(f"No card art folder found for {suit_title} (expected {cards_dir}).")
+
+    st.markdown("---")
+
+    # ---- Suit-specific zip download ----
+    # Convention: mods/hearts_art.zip, mods/diamonds_art.zip, etc.
+    suit_zip_name = f"{suit_key}_art.zip"
+    suit_zip_path = pathlib.Path(MODS_DIR) / suit_zip_name
+
+    if suit_zip_path.is_file():
+        size_mb = suit_zip_path.stat().st_size / (1024 * 1024)
+        sha = file_sha256(str(suit_zip_path))
+
+        st.subheader(f"Download {suit_title} Mod Zip")
+        st.caption(f"File: `{suit_zip_name}` — {size_mb:.2f} MB — SHA-256: `{sha}`")
+
+        with open(suit_zip_path, "rb") as f:
+            st.download_button(
+                label=f"Download {suit_title} Art",
+                data=f.read(),
+                file_name=suit_zip_name,
+                mime="application/zip",
+                type="primary",
+            )
+    else:
+        st.info(f"No mod zip found for {suit_title} yet (looking for `{suit_zip_name}` in `{MODS_DIR}`).")
+
+# Convert labels ======================
+def label_to_suit_key(label: str) -> str:
+    # Take the last word ("Hearts", "Diamonds", etc.) and lowercase it
+    return label.split()[-1].lower()
+
+# Home Page Rendering ========================
+def base64_encode(path):
+    with open(path, "rb") as f:
+        return base64.b64encode(f.read()).decode()
+
+
+def render_home_page() -> None:
+    """Landing page with jimbo image + centered blurb."""
+    jimbo_path = pathlib.Path(__file__).parent / "assets" / "jimbo2.png"
+
+    if jimbo_path.is_file():
+        img_html = f"""
+<div class="jimbo-wrapper">
+  <img class="jimbo-idle tilt-on-hover"
+       src="data:image/png;base64,{base64_encode(jimbo_path)}" />
+</div>
+"""
+    else:
+        img_html = "<p>(Add jimbo2.png in the assets/ folder to show the jimbo image here.)</p>"
+
+    html = f"""
+<div style="text-align:center; max-width:800px; margin:0 auto;">
+
+
+  {img_html}
+
+  <h3 style="margin-bottom: 1rem;">
+    Welcome to the Balatro Card Art Mod Manager!
+  </h3>
+
+  <p>
+    This tool helps you manage and customize <strong>card art mods</strong> for Balatro:
+  </p>
+
+  <ul style="
+      list-style-position: inside;
+      padding-left: 0;
+      display: inline-block;
+      text-align: left;
+      margin: 0 auto 1.5rem auto;
+  ">
+    <li>Browse suit-specific artwork</li>
+    <li>Download mod-ready zip files</li>
+    <li>Patch your <code>Balatro.exe</code> safely using 7-Zip</li>
+    <li>Restore backups with one click</li>
+  </ul>
+
+  <p>
+    Use the navigation on the left to explore the suits or install your mods.
+  </p>
+
+</div>
+"""
+
+    # THIS was missing in your version:
+    st.markdown(html, unsafe_allow_html=True)
+
+
+

@@ -2,9 +2,47 @@
 import mod_support_func as msf
 import streamlit as st
 
-# UI ==========================================
-st.set_page_config(page_title=msf.APP_NAME, page_icon="🃏", layout="centered") # browser icon and title
-st.title("Balatro Mod Manager")
+
+# Search bar icon ===============
+st.set_page_config(page_title=msf.APP_NAME, page_icon="🃏", layout="wide") # browser icon and title
+
+st.markdown("""
+<link href="https://fonts.googleapis.com/css?family=Rancho&effect=anaglyph" rel="stylesheet">
+""", unsafe_allow_html=True)
+
+# Load custom CSS from styles.css ============
+msf.local_css("assets/styles.css") # load in the styles
+
+# floating title ==========================================
+st.markdown(
+    """
+    <div style="text-align:center;">
+        <h1 class="title-floater title-idle"
+            data-title="Balatro Card Art Mod Manager"
+            style="font-family: Rancho; display:inline-block;">
+            Balatro Card Art Mod Manager
+        </h1>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+
+# Sidebar =================
+suits = ["HOME", "♥ Hearts", "♦ Diamonds", "♣ Clubs", "♠ Spades"]
+st.sidebar.title("Card Suits")
+selected_category = st.sidebar.radio("Select a Suit",suits) # create a category selector as a sidebar
+
+# PAGE ROUTING ===
+if selected_category.startswith("HOME"):
+    # home page
+    msf.render_home_page()
+else:
+    # Suit pages
+    selected_suit_key = msf.label_to_suit_key(selected_category)
+    msf.render_suit_page(selected_suit_key)
+
+st.divider()
 
 # Section: Download your mod zips ==============
 st.subheader("*Requires 7zip for Mod Installation*")

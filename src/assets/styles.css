@@ -1,0 +1,139 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap');
+
+/* === BACKGROUND AND GLOBAL STYLING === */
+.stApp {
+    background-image: linear-gradient(to bottom, rgba(8, 77, 96, 0.445), rgba(0, 6, 31, 0.9)),
+                      url("https://styles.redditmedia.com/t5_8pimef/styles/bannerBackgroundImage_0e8fxb9funfc1.jpg?format=pjpg&s=caafccccbb631f7b5355254c477dd24869ec196e");
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+    font-family: 'Roboto', sans-serif !important;
+}
+
+/* === TITLE ANIMATION === */
+
+.title-floater {
+  display: inline-block;
+  font-size: xx-large;
+  letter-spacing: 2px;
+  text-shadow: 4px 4px 2px rgba(255, 49, 49, 0.5);
+}
+
+/* Reuse the jimboIdle keyframes for the title as well */
+.title-idle {
+  animation: jimboIdle 8s ease-in-out infinite;
+  transform-origin: center;
+  will-change: transform;
+}
+
+/* When hovered (with tilt-on-hover), stop the idle animation
+   so the hover tilt takes over cleanly */
+.title-idle.tilt-on-hover:hover {
+  animation: none;
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .title-idle {
+    animation: none !important;
+  }
+}
+
+
+/* === Stops motion if people dont want it === */
+@media (prefers-reduced-motion: reduce) {
+  .title-floater { animation: none !important; }
+}
+
+/* === SIDEBAR === */
+
+section[data-testid="stSidebar"] *,
+section[data-testid="stSidebar"] label {
+    color: white !important;
+}
+section[data-testid="stSidebar"] {
+    background-color:rgb(255, 48, 48, .5);
+    border-right: 2px solid rgb(255, 64, 64);
+    color: white !important;
+    font-family: Rancho, sans-serif !important;
+}
+
+
+button, .stButton > button, .css-1emrehy, .css-1cpxqw2 {
+    background-color: rgb(255, 64, 64) !important;
+    color: white !important;
+    font-weight: bold !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 1rem !important;
+}
+
+
+button:hover, .stButton > button:hover {
+    background-color: rgba(255, 64, 64) !important;
+    color: white !important;
+}
+    
+
+
+/* === STREAMLIT TOP HEADER === */
+
+header[data-testid="stHeader"] {
+    background-color: rgb(0, 162, 212, .5); 
+     border-bottom: 2px solid rgb(0, 162, 212); 
+    color: white;
+    font-weight: solid bold !important;
+
+}
+
+/* === HOME jimbo IMAGE EFFECTS === */
+
+.jimbo-wrapper {
+  perspective: 1000px;
+  display: flex;
+  justify-content: center;
+  margin: 1.5rem 0;
+}
+
+/* Generic tilt-on-hover class  */
+.tilt-on-hover {
+  border-radius: 12px;
+  /* box-shadow: 0 0 20px rgba(0, 0, 0, 0.5); */
+  transform-style: preserve-3d;
+  transition:
+    transform 0.35s ease-out,
+    box-shadow 0.35s ease-out;
+  will-change: transform, box-shadow;
+}
+
+.tilt-on-hover:hover {
+  transform: rotateX(8deg) rotateY(-6deg) scale(1.03);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.7);
+}
+
+/* Idle floating / tilting animation for the jimbo image */
+.jimbo-idle {
+  max-width: 60%;
+  animation: jimboIdle 8s ease-in-out infinite;
+}
+
+/* Keyframes for idle motion */
+@keyframes jimboIdle {
+  0%   { transform: translateY(0px) rotateZ(-1deg); }
+  25%  { transform: translateY(-6px) rotateZ(1deg); }
+  50%  { transform: translateY(0px) rotateZ(0deg); }
+  75%  { transform: translateY(4px) rotateZ(-1deg); }
+  100% { transform: translateY(0px) rotateZ(1deg); }
+}
+
+/* On hover: stop the idle animation so the hover tilt can take over */
+.jimbo-idle.tilt-on-hover:hover {
+  animation: none;
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .jimbo-idle {
+    animation: none !important;
+  }
+}
