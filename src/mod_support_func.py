@@ -28,6 +28,8 @@ SEVEN_ZIP_CANDIDATES = [
 ]
 
 
+
+
 def local_css(file_name: str) -> None:
     """ Read in the CSS file and apply it to the app """
     try:
@@ -206,23 +208,23 @@ def apply_zip_to_dir(zip_path: str, dest_dir: str):
             with z.open(m) as src, open(out_path, "wb") as dst:
                 shutil.copyfileobj(src, dst)
 
-"""
-DOESN'T WORK WITH WAY BALATRO IS PACKAGED ON STEAM
-def install_to_streamingassets(game_root: str, mod_zip_or_url: str) -> str:
-    ''' Install mod zip into StreamingAssets directory. '''
-    ensure_assets_backup(game_root)
-    target_root = game_root
-    if mod_zip_or_url.startswith(("http://", "https://")):
-        tmp = download(mod_zip_or_url)
-        try:
-            apply_zip_to_dir(tmp, target_root)
-        finally:
-            try: os.remove(tmp)
-            except: pass
-    else:
-        apply_zip_to_dir(mod_zip_or_url, target_root)
-    return "Installed mod to StreamingAssets (non-EXE method)."
-    """
+
+# # DOESN'T WORK WITH WAY BALATRO IS PACKAGED ON STEAM
+# def install_to_streamingassets(game_root: str, mod_zip_or_url: str) -> str:
+#     ''' Install mod zip into StreamingAssets directory. '''
+#     ensure_assets_backup(game_root)
+#     target_root = game_root
+#     if mod_zip_or_url.startswith(("http://", "https://")):
+#         tmp = download(mod_zip_or_url)
+#         try:
+#             apply_zip_to_dir(tmp, target_root)
+#         finally:
+#             try: os.remove(tmp)
+#             except: pass
+#     else:
+#         apply_zip_to_dir(mod_zip_or_url, target_root)
+#     return "Installed mod to StreamingAssets (non-EXE method)."
+    
 
 def install_into_exe_archive(game_root: str, mod_zip_or_url: str) -> str:
     ''' Install mod zip into Balatro.exe using 7-Zip. '''
@@ -258,35 +260,147 @@ def install_into_exe_archive(game_root: str, mod_zip_or_url: str) -> str:
         if res.returncode != 0:
             raise RuntimeError(f"7z update failed:\n{res.stdout}\n{res.stderr}")
 
-        return "Successfully Modded Balatro.exe -> resources\\textures\\2x\\ with new artwork!" 
+        return "Successfully Modded Balatro with new artwork!" 
     finally: # remove the temporary staging directory
         shutil.rmtree(staging, ignore_errors=True)
         if tmpzip:
             try: os.remove(tmpzip)
             except: pass
 
+# ---- PAGE-SPECIFIC BACKGROUND THEME ----
+def apply_page_background(page: str) -> None:
+    # Default: let styles.css handle HOME
+    if page == "HOME":
+        css = """
+        <style>
+        /* If you want HOME to be different from the global CSS,
+           you can override here; otherwise leave this empty block. */
+        </style>
+        """
+    elif "Hearts" in page:
+        css = """
+        <style>
+        .stApp {
+            background-image: linear-gradient(to bottom, rgba(147, 0, 0, 0.729), rgba(31, 0, 0, 0.9)),
+                      url("https://styles.redditmedia.com/t5_8pimef/styles/bannerBackgroundImage_0e8fxb9funfc1.jpg?format=pjpg&s=caafccccbb631f7b5355254c477dd24869ec196e");
+            background-attachment: fixed;
+            background-size: cover;
+            background-position: center;
+        }
+        </style>
+        """
+    elif "Diamonds" in page:
+        css = """
+        <style>
+        .stApp {
+            background-image: linear-gradient(to bottom, rgba(169, 56, 0, 0.3), rgba(63, 21, 0, 0.9)),
+                      url("https://styles.redditmedia.com/t5_8pimef/styles/bannerBackgroundImage_0e8fxb9funfc1.jpg?format=pjpg&s=caafccccbb631f7b5355254c477dd24869ec196e");
+            background-attachment: fixed;
+            background-size: cover;
+            background-position: center;
+        }
+        </style>
+        """
+
+    elif "Clubs" in page:
+        css = """
+        <style>
+        .stApp {
+            
+            background-image: linear-gradient(to bottom, rgba(17, 107, 77, 0.3), rgba(0, 37, 20, 0.9)),
+                      url("https://styles.redditmedia.com/t5_8pimef/styles/bannerBackgroundImage_0e8fxb9funfc1.jpg?format=pjpg&s=caafccccbb631f7b5355254c477dd24869ec196e");
+            background-attachment: fixed;
+            background-size: cover;
+            background-position: center;
+        }
+        </style>
+        """
+    elif "Spades" in page:
+        css = """
+        <style>
+        .stApp {
+            background-image: linear-gradient(
+                to bottom,
+                rgba(0, 40, 90, 0.85),
+                rgba(0, 5, 20, 0.95)),
+                url("https://styles.redditmedia.com/t5_8pimef/styles/bannerBackgroundImage_0e8fxb9funfc1.jpg?format=pjpg&s=caafccccbb631f7b5355254c477dd24869ec196e");
+            background-attachment: fixed;
+            background-size: cover;
+            background-position: center;
+        }
+        </style>
+        """
+    else:
+        css = "<style></style>"
+
+    st.markdown(css, unsafe_allow_html=True)
+
+
+
 # Per-Suit Page Rendering ==========================
 def render_suit_page(suit_key: str) -> None:
     """
     Render the per-suit 'page':
       - show suit title
+      - optional high-contrast toggle
       - show card art thumbnails for that suit
-      - provide a download button for that suit's zip only
+      - provide per-suit zip download
+      - optional one-click install into Balatro.exe
     """
-
     suit_title = suit_key.capitalize()
     st.markdown(f"## {suit_title} Card Art")
 
-    # ---- Show card art for this suit ----
-    # Example folder layout: assets/cards/hearts/*.png
-    cards_dir = pathlib.Path(__file__).parent / "assets" / "cards" / suit_key
+    # --- High contrast toggle ---
+    high_contrast = st.toggle("High Contrast", value=False)
+
+    # --- Show card art previews ---
+    hc_or_norm = "hc" if high_contrast else "normal"
+    cards_dir = pathlib.Path(__file__).parent / "assets" / "cards" / suit_key / hc_or_norm
+
+    game_root = detect_balatro_dirs()[0] if detect_balatro_dirs() else ""
+
+
+    # Button to download ================
+    # --- Suit-specific zip path ---
+    suit_zip_name = f"{suit_key}_art.zip"
+    suit_zip_path = pathlib.Path(MODS_DIR) / suit_zip_name
+
+    if not suit_zip_path.is_file():
+        st.info(f"No mod zip found for {suit_title} yet "
+                f"(looking for `{suit_zip_name}` in `{MODS_DIR}`).")
+        return
+
+    if st.button(f"Install {suit_title} Art", key=f"install_{suit_key}"):
+        try:
+            msg = install_into_exe_archive(game_root, str(suit_zip_path))
+            st.success(msg)
+
+        except PermissionError:
+            st.error("Permission denied. Run as Administrator if installing under Program Files.")
+
+        except RuntimeError as e:
+            # Surface the 7z message, but in a friendlier way
+            st.error(f"7-Zip failed while installing {suit_title} art. "
+                     "Most likely the zip does not contain a `resources\\textures\\2x` folder "
+                     "at its root. Check the zip layout.\n\n"
+                     f"Details:\n{e}")
+            
+        except Exception as e:
+            st.error(f"Install failed: {e}")
+
     if cards_dir.is_dir():
         img_files = sorted(cards_dir.glob("*.png"))
         if img_files:
             cols = st.columns(4)
             for i, img_path in enumerate(img_files):
                 with cols[i % 4]:
-                    st.image(str(img_path))
+                    img_html = f"""
+<div class="jimbo-wrapper">
+  <img class="jimbo-idle tilt-on-hover"
+       src="data:image/png;base64,{base64_encode(img_path)}" />
+</div>
+"""
+                    st.markdown(img_html, unsafe_allow_html=True)
         else:
             st.info(f"No card images found yet for {suit_title}.")
     else:
@@ -294,28 +408,7 @@ def render_suit_page(suit_key: str) -> None:
 
     st.markdown("---")
 
-    # ---- Suit-specific zip download ----
-    # Convention: mods/hearts_art.zip, mods/diamonds_art.zip, etc.
-    suit_zip_name = f"{suit_key}_art.zip"
-    suit_zip_path = pathlib.Path(MODS_DIR) / suit_zip_name
 
-    if suit_zip_path.is_file():
-        size_mb = suit_zip_path.stat().st_size / (1024 * 1024)
-        sha = file_sha256(str(suit_zip_path))
-
-        st.subheader(f"Download {suit_title} Mod Zip")
-        st.caption(f"File: `{suit_zip_name}` — {size_mb:.2f} MB — SHA-256: `{sha}`")
-
-        with open(suit_zip_path, "rb") as f:
-            st.download_button(
-                label=f"Download {suit_title} Art",
-                data=f.read(),
-                file_name=suit_zip_name,
-                mime="application/zip",
-                type="primary",
-            )
-    else:
-        st.info(f"No mod zip found for {suit_title} yet (looking for `{suit_zip_name}` in `{MODS_DIR}`).")
 
 # Convert labels ======================
 def label_to_suit_key(label: str) -> str:
@@ -376,8 +469,52 @@ def render_home_page() -> None:
 </div>
 """
 
-    # THIS was missing in your version:
     st.markdown(html, unsafe_allow_html=True)
 
 
+def render_restore_page()->None:
+    """ Page for restoring backups of original game assets. """
+
+    
+    paintbrush_path = pathlib.Path(__file__).parent / "assets" / "paintbrush.png"
+
+    if paintbrush_path.is_file():
+        img_html = f"""
+                    <div class="jimbo-wrapper">
+                    <img class="jimbo-idle tilt-on-hover"
+                        src="data:image/png;base64,{base64_encode(paintbrush_path)}" />
+                    </div>
+                """
+    else:
+        img_html = "<p>(Add paintbrush.png in the assets/ folder to show the image here.)</p>"
+
+    st.markdown(img_html, unsafe_allow_html=True) # add floating paintbrush
+
+    st.markdown("## Restore Original Game Assets")
+    st.text("Restore original card art from backups and remove any modded card art.")
+
+    game_root = detect_balatro_dirs()[0] if detect_balatro_dirs() else ""
+    
+
+    valid_game = os.path.isdir(game_root)
+    exe_present = os.path.isfile(os.path.join(game_root, EXE_NAME)) if valid_game else False
+
+    if not valid_game:
+        st.warning("Enter a valid Balatro install folder before restoring.")
+        return
+
+    if not exe_present:
+        st.warning(f"{EXE_NAME} not found in that folder.")
+        return
+
+    if st.button("Restore Original Assets"):
+        try:
+            restored_exe = restore_exe_backup(game_root)
+            restored_assets = restore_assets_backup(game_root)
+            if restored_exe or restored_assets:
+                st.success("Successfully restored original game assets!")
+            else:
+                st.info("No backups found to restore.")
+        except Exception as e:
+            st.error(f"Restore failed: {e}")
 
