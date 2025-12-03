@@ -54,9 +54,9 @@ st.markdown(
 
 
 # Sidebar =================
-suits = ["HOME", "♥ Hearts", "♦ Diamonds", "♣ Clubs", "♠ Spades", "Restore Original"]
-st.sidebar.title("Card Suits")
-selected_category = st.sidebar.radio("Select a Suit",suits) # create a category selector as a sidebar
+suits = ["HOME", "♥ Hearts", "♦ Diamonds", "♣ Clubs", "♠ Spades", "Upload Your Own Art" ,"Restore Original"]
+st.sidebar.title("Manage Artwork")
+selected_category = st.sidebar.radio("-------", suits) # create a category selector as a sidebar
 msf.apply_page_background(selected_category) # apply background based on selected category
 # PAGE ROUTING ===
 if selected_category.startswith("HOME"):
@@ -66,6 +66,10 @@ if selected_category.startswith("HOME"):
 elif selected_category == "Restore Original":
     # restore from backup all of original art
     msf.render_restore_page()
+
+elif selected_category == "Upload Your Own Art":
+    # upload your own art through zip file
+    msf.render_upload_page()
 
 else:
     # Suit pages

@@ -423,7 +423,7 @@ def base64_encode(path):
 
 def render_home_page() -> None:
     """Landing page with jimbo image + centered blurb."""
-    jimbo_path = pathlib.Path(__file__).parent / "assets" / "jimbo2.png"
+    jimbo_path = pathlib.Path(__file__).parent / "assets" / "jimbo.png"
 
     if jimbo_path.is_file():
         img_html = f"""
@@ -433,7 +433,7 @@ def render_home_page() -> None:
 </div>
 """
     else:
-        img_html = "<p>(Add jimbo2.png in the assets/ folder to show the jimbo image here.)</p>"
+        img_html = "<p>(Add jimbo.png in the assets/ folder to show the jimbo image here.)</p>"
 
     html = f"""
 <div style="text-align:center; max-width:800px; margin:0 auto;">
@@ -476,19 +476,19 @@ def render_restore_page()->None:
     """ Page for restoring backups of original game assets. """
 
     
-    paintbrush_path = pathlib.Path(__file__).parent / "assets" / "paintbrush.png"
+    reroll_path = pathlib.Path(__file__).parent / "assets" / "reroll.png"
 
-    if paintbrush_path.is_file():
+    if reroll_path.is_file():
         img_html = f"""
                     <div class="jimbo-wrapper">
                     <img class="jimbo-idle tilt-on-hover"
-                        src="data:image/png;base64,{base64_encode(paintbrush_path)}" />
+                        src="data:image/png;base64,{base64_encode(reroll_path)}" />
                     </div>
                 """
     else:
-        img_html = "<p>(Add paintbrush.png in the assets/ folder to show the image here.)</p>"
+        img_html = "<p>(Add reroll.png in the assets/ folder to show the image here.)</p>"
 
-    st.markdown(img_html, unsafe_allow_html=True) # add floating paintbrush
+    st.markdown(img_html, unsafe_allow_html=True) # add floating reroll
 
     st.markdown("## Restore Original Game Assets")
     st.text("Restore original card art from backups and remove any modded card art.")
@@ -518,3 +518,48 @@ def render_restore_page()->None:
         except Exception as e:
             st.error(f"Restore failed: {e}")
 
+def save_uploaded_zip(upload) -> str:
+    """ Save uploaded zip file to a temp location and return its path. """
+    tmpf = tempfile.NamedTemporaryFile(suffix=".zip", delete=False)
+    tmpf.write(upload.read()); tmpf.flush(); tmpf.close()
+    return tmpf.name
+
+def render_upload_page()->None:
+    """ Page for uploading your own mod zip to install into Balatro.exe. """
+
+    paintbrush_path = pathlib.Path(__file__).parent / "assets" / "paintbrush.png"
+
+    if paintbrush_path.is_file():
+        img_html = f"""
+                    <div class="jimbo-wrapper">
+                    <img class="jimbo-idle tilt-on-hover"
+                        src="data:image/png;base64,{base64_encode(paintbrush_path)}" />
+                    </div>
+                """
+    else:
+        img_html = "<p>(Add paintbrush.png in the assets/ folder to show the image here.)</p>"
+
+    st.markdown(img_html, unsafe_allow_html=True) # add floating paintbrush
+    st.markdown("## Upload Your Own Card Art Mod")
+    st.text("Upload a mod .zip file structured for Balatro.exe and install it directly.\nThe zip should follow the structure: `resources\\textures\\2x` folder at its root with the card images as .png inside.")
+
+    game_root = detect_balatro_dirs()[0] if detect_balatro_dirs() else ""
+    mod_zip = st.file_uploader("Or upload mod .zip", type=["zip"])
+    if st.button("Install uploaded zip", disabled=not (mod_zip is not None)):
+        tmp = save_uploaded_zip(mod_zip)
+        try:
+            with st.status("Patching EXE via 7-Zip...", expanded=True) as s:
+                st.write("Backing up Balatro.exe …")
+                backup_file(os.path.join(game_root, EXE_NAME))
+                st.write("Applying …")
+                msg = install_into_exe_archive(game_root, tmp)
+                s.update(label="Done", state="complete")
+            st.success(msg)
+
+        except PermissionError:
+                st.error("Permission denied. Run as Administrator if installing under Program Files.")
+        except Exception as e:
+            st.error(f"Install failed: {e}")
+        finally:
+            try: os.remove(tmp)
+            except: pass
